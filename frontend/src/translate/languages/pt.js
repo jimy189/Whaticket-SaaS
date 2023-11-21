@@ -354,6 +354,7 @@ const messages = {
           annoucements: "Informativos",
           chats: "Chat Interno",
           email: "E-Mail",
+          template: "Templates",
           financeiro: "Financeiro",
           kanban: "Kanban",
         },

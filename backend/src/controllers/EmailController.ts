@@ -1,14 +1,18 @@
 import { Request, Response } from "express";
 import { getIO } from "../libs/socket";
-import fs from 'fs/promises';
-import path from 'path'; 
 import CreateCampaignService from "../services/CampaignEmailService/CreateCampaignService";
-import SimpleListService from "../services/UserServices/SimpleListService";
 import ListService from "../services/CampaignEmailService/ListEmailService";
 import GenerateDkimKeys from "../services/CampaignEmailService/GenerateDkimService";
 import VerifyDkimDNS from "../services/CampaignEmailService/VerifyDkimDns";
 import ShowCapaignEmailService from "../services/CampaignEmailService/ShowCapaignEmailService";
-import { promises as fsPromises } from 'fs';
+import DeleteService from "../services/CampaignEmailService/DeleteService";
+import UpdateService from "../services/CampaignEmailService/UpdateService";
+import SaveTemplateService from "../services/CampaignEmailService/SaveTemplateService";
+import ShowTemplateService from "../services/CampaignEmailService/ShowTemplateService";
+import DeleteTemplateService from "../services/CampaignEmailService/DeleteTemplateService";
+import UpdateTemplateService from "../services/CampaignEmailService/UpdateTemplateService";
+import ShowTemplateServiceById from "../services/CampaignEmailService/ShowTemplateServiceById";
+import SendEmail from "../services/CampaignEmailService/SendEmailService";
 
 interface EmailData {
   name: string;
@@ -36,48 +40,121 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   return res.json({ email, count, hasMore });
 };
 
+export const templates = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { companyId } = req.user;
+    const templateList = await ShowTemplateService(companyId);
+
+    return res.json({ success: true, templates: templateList });
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    return res.status(500).json({ success: false, error: 'Error fetching templates.' });
+  }
+};
+
+
+export const remove = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+  const { companyId } = req.user;
+
+  await DeleteService(id);
+
+  const io = getIO();
+  io.emit(`company-${companyId}-email`, {
+    action: "delete",
+    id
+  });
+
+  return res.status(200).json({ message: "Email deleted" });
+};
+
+export const removeTemplate = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { id } = req.params;
+  const { companyId } = req.user;
+
+  await DeleteTemplateService(id);
+
+  const io = getIO();
+  io.emit(`company-${companyId}-template`, {
+    action: "delete",
+    id
+  });
+
+  return res.status(200).json({ message: "Template deleted" });
+};
+
+export const updateTemplate = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const data = req.body;
+  console.log(data);
+  const { id } = req.params;
+
+  const record = await UpdateTemplateService({
+    ...data,
+    id: +id
+  });
+
+  return res.status(200).json(record);
+};
+
+export const update = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const data = req.body;
+  const { id } = req.params;
+
+  const record = await UpdateService({
+    ...data,
+    id: +id
+  });
+
+  return res.status(200).json(record);
+};
+
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
   const record = await ShowCapaignEmailService(id);
+  return res.status(200).json(record);
+};
 
+export const showTemplateById = async (req: Request, res: Response): Promise<Response> => {
+  const { id } = req.params;
+
+  const record = await ShowTemplateServiceById(id);
   return res.status(200).json(record);
 };
 
 
 export const save = async (req: Request, res: Response): Promise<Response> => {
-  const { content, companyId } = req.body;
+  const { html, design, companyId, templateName } = req.body;
 
   try {
-    // Criar um nome único para o arquivo (por exemplo, usando um timestamp)
-    const timestamp = new Date().getTime();
 
-    // Verificar se o conteúdo começa com <!DOCTYPE>
-    const isHtmlContent = content.startsWith('<!DOCTYPE');
+    const htmlWithoutNewlines = html.replace(/\n/g, '');
+    console.log('Depois do trim:', htmlWithoutNewlines);
 
-    // Caminho completo para o novo arquivo na pasta "templates" ou "templates_html"
-    const baseDirectory = isHtmlContent ? 'templates_html' : 'templates';
-    const userDirectory = path.join('src/controllers', baseDirectory, companyId.toString());
-    const filePath = path.join(userDirectory, `${timestamp}.html`);
+    const templateRecord = await SaveTemplateService(companyId, templateName, htmlWithoutNewlines, design);
 
-    // Criar a pasta se não existir
-    await fsPromises.mkdir(userDirectory, { recursive: true });
+    if (templateRecord == false) {
+      return res.status(400).json({ success: false, message: 'Template with the same name already exists.' });
+    }
 
-    // Salvar o conteúdo no novo arquivo
-    await fsPromises.writeFile(filePath, content);
-
-    // Notificar clientes usando socket.io
-    const io = getIO();
-    io.emit('templateUpdated', { message: 'Novo template salvo!' });
-
-    return res.status(200).json({ success: true, message: 'Template salvo com sucesso.' });
+    return res.status(200).json({ success: true, message: 'Template saved successfully.' });
   } catch (error) {
-    console.error('Erro ao salvar o arquivo:', error);
-    return res.status(500).json({ success: false, error: 'Erro ao salvar o arquivo.' });
+    console.error('Error saving the file:', error);
+    return res.status(500).json({ success: false, error: 'Error saving the file.' });
   }
 };
-
-
 export const generateKey = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { domain, companyId } = req.body;
@@ -92,6 +169,22 @@ export const generateKey = async (req: Request, res: Response): Promise<Response
     }else{
     return res.status(500).json(dkimRecord);
   }
+  } catch (error) {
+    console.error('Erro no controller GenerateDkimKeysController:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor.' });
+  }
+};
+
+export const sendEmail = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { id } = req.params;
+    const { companyId } = req.user;
+    const record = await SendEmail(parseInt(id), companyId);
+   if(record.success == true){
+    return res.status(200).json(record);
+    }else{
+    return res.status(500).json(record);
+    }
   } catch (error) {
     console.error('Erro no controller GenerateDkimKeysController:', error);
     return res.status(500).json({ error: 'Erro interno do servidor.' });

@@ -28,6 +28,7 @@
     "grapesjs-preset-webpage": "^1.0.3",
     "himalaya": "^1.1.0",
     "html-to-json": "^0.6.0",
+    "html2canvas": "^1.4.1",
     "i18next": "^19.8.2",
     "i18next-browser-languagedetector": "^6.0.1",
     "markdown-to-jsx": "^7.1.0",

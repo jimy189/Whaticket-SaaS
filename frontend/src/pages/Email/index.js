@@ -18,6 +18,7 @@ import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper"
 import MainContainer from "../../components/MainContainer";
 import EmailModal from "../../components/EmailModal";
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
+import PlayCircleFilledWhiteIcon from '@material-ui/icons/PlayCircleFilledWhite';
 import EditIcon from "@material-ui/icons/Edit";
 import EmailModalCampaign from "../CampaignsEmail";
 import EditModalCampaign from "../../components/EditEmailModal/index";
@@ -51,11 +52,13 @@ const Email = () => {
   const [pageNumber, setPageNumber] = useState(1);
   const [searchParam, setSearchParam] = useState("");
   const [idEmail, setIdEmail] = useState();
+  const [idEmailDelete, setIdEmailDelete] = useState();
   const [user, setUser] = useState(null);
   const [emailData, setEmailData] = useState();
   const [userDNS, setUserDNS] = useState(null);
   const [dkim, setDkim] = useState("");
   const [userId, setUserId] = useState(localStorage.getItem("userId"));
+  const [loadingDNS, setLoadingDNS] = useState(false);
 
 
   const handleGenerateDNS = async () => {
@@ -63,6 +66,7 @@ const Email = () => {
       const response = await api.post('/keys', userDNS);
       if (response.status === 200) {
         setDkim(response.data);
+        setLoadingDNS(true);
         toast.success(`Chave gerada com sucesso`);
       }
     } catch (err) {
@@ -104,6 +108,17 @@ const Email = () => {
     await fetchEmailInfo(email);
     setNewTemplateCampaignEditModalOpen(true);
   };
+
+  const sendEmail = async (emailId) => {
+    try {
+      const { data } = await api.post(`/email/send/${emailId}`);
+
+      console.log(data);
+
+    } catch (err) {
+      toastError(err);
+    }
+  };
   
 
 
@@ -124,8 +139,17 @@ const Email = () => {
     setNewTemplateCampaignValidationOpen(true)
   };
 
-  const handleDelete = () => {
-    console.log("Excluir");
+  const handleDelete = async (id) => {
+		try {
+      console.log(id);
+			await api.delete(`/email/${id}`);
+      const { data } = await api.get("/emails", {
+        params: { searchParam, pageNumber },
+      });
+			setEmails(data.email);
+		} catch (err) {
+			toastError(err);
+		}
   };
 
   const formatDate = (dataFormatada) => {
@@ -151,12 +175,14 @@ const Email = () => {
   return (
     <MainContainer className={classes.mainContainer}>
 
-      <EmailModalCampaignValidation
-        dns={dkim}
-        user={userDNS}
-        open={newTemplateCampaignValidationOpen}
-        onClose={handleNewTemplateValidationCampaignClose}
-      />
+{loadingDNS && dkim != null && (
+  <EmailModalCampaignValidation
+    dns={dkim}
+    user={userDNS}
+    open={newTemplateCampaignValidationOpen}
+    onClose={handleNewTemplateValidationCampaignClose}
+  />
+)}
 
       <EmailModalCampaign
         company={companyId}
@@ -167,7 +193,8 @@ const Email = () => {
 
       <EditModalCampaign
         emailInfo={emailData}
-        idCampaignEmail={idEmail}
+        company={companyId}
+        setEmails={setEmails}
         open={newTemplateCampaignEditModalOpen}
         onClose={handleNewTemplateEditCampaignClose}
       />
@@ -176,7 +203,7 @@ const Email = () => {
         title={`Você tem certeza que quer excluir esta campanha?`}
         open={confirmModalDeleteOpen}
         onClose={setConfirmModalDeleteOpen}
-        onConfirm={handleDelete}
+        onConfirm={() => handleDelete(idEmailDelete)}
       >
         Esta ação não pode ser revertida.
       </ConfirmationModal>
@@ -227,12 +254,23 @@ const Email = () => {
         <IconButton size="small" onClick={() => handleEdit(email.id)}>
           <EditIcon/>
         </IconButton>
-        <IconButton size="small" onClick={() => {
-            setConfirmModalDeleteOpen(true);
-          }}>
-          <DeleteOutlineIcon 
-          />
-        </IconButton>
+        <IconButton
+  size="small"
+  onClick={() => {
+    setConfirmModalDeleteOpen(true);
+    setIdEmailDelete(email.id);
+  }}
+>
+  <DeleteOutlineIcon />
+</IconButton>
+<IconButton
+  size="small"
+  onClick={() => {
+    sendEmail(email.id);
+  }}
+>
+  <PlayCircleFilledWhiteIcon />
+</IconButton>
       </TableCell>
     </TableRow>
     ))}

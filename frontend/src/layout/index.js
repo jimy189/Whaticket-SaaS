@@ -30,7 +30,7 @@ import toastError from "../errors/toastError";
 import { useDate } from "../hooks/useDate";
 import AnnouncementsPopover from "../components/AnnouncementsPopover";
 
-import logo from "../assets/logo.png";
+import logo from "../assets/logoNova.png";
 import { socketConnection } from "../services/socket";
 import ChatPopover from "../pages/Chat/ChatPopover";
 import { system } from "../config.json";
@@ -49,7 +49,6 @@ const useStyles = makeStyles((theme) => ({
     [theme.breakpoints.down("sm")]: {
       height: "calc(100vh - 56px)",
     },
-    backgroundColor: theme.palette.fancyBackground,
     '& .MuiButton-outlinedPrimary': {
       color: theme.mode === 'light' ? '#007aff' : '#FFF',
       border: theme.mode === 'light' ? '1px solid rgba(0 124 102)' : '1px solid rgba(255, 255, 255, 0.5)',
@@ -71,7 +70,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     justifyContent: "flex-end",
     padding: "0 8px",
-    minHeight: "48px",
+    minHeight: "80px",
     background: theme.palette.barraSuperior,
     [theme.breakpoints.down("sm")]: {
       height: "48px"
@@ -253,7 +252,7 @@ const LoggedInLayout = ({ children }) => {
         open={drawerOpen}
       >
         <div className={classes.toolbarIcon}>
-          <img src={logo} style={{ margin: "0 auto", height: "100%", width: "100%" }} alt="logo" />
+          <img src={logo} style={{ margin: "0 auto", width: "80%" }} alt="logo" />
           <IconButton onClick={() => setDrawerOpen(!drawerOpen)} style={{ color: "white" }}>
             <ChevronLeftIcon />
           </IconButton>
@@ -306,9 +305,10 @@ const LoggedInLayout = ({ children }) => {
             )}
           </Typography>
 
-          <IconButton edge="start" onClick={toggleColorMode}>
+        {/*  <IconButton edge="start" onClick={toggleColorMode}>
             {theme.mode === 'dark' ? <Brightness7Icon style={{ color: "white" }} /> : <Brightness4Icon style={{ color: "white" }} />}
           </IconButton>
+            */}
 
           {user.id && <NotificationsPopOver />}
 

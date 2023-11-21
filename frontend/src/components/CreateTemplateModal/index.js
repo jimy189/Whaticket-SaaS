@@ -12,9 +12,6 @@ import api from "../../services/api";
 import { toast } from "react-toastify";
 import { i18n } from "../../translate/i18n"
 import toastError from "../../errors/toastError";
-import {
-  Typography
-} from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -44,69 +41,80 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-const EmailModalCampaignValidation = ({ open, onClose, user, dns }) => {
-  const classes = useStyles();
+const CreateTemplateModal = ({ open, onClose, company, data }) => {
 
-  const handleClose = () => {
-    onClose();
-  };
+    const [templateForm, setTemplateForm] = useState({
+        templateName: "",
+        company: company,
+        template: null,
+        templateHtml: null,
+      });
+    
+  
+    const classes = useStyles();
+  
+    const handleClose = () => {
+      onClose();
+    };
+  
+    const handleSaveEmail = async (values) => {
+  
+      const saveTemplate = async () => {
+        try {
+          const response = await api.post('/saveTemplate', { design: JSON.stringify(data.design), html:data.html, companyId: company, templateName:values.templateName }, { headers: { 'Content-Type': 'application/json' } });
 
-  const handleVerifyDNS = async () => {
-    try {
-      const response = await api.post(`/email/verify/${user.id}`);
-      if (response.status === 200) {
-        toast.success(`E-mail validado com sucesso`);
-      }
-    } catch (err) {
-      toastError("Não foi possível validar o DNS, tente novamente mais tarde");
-    }
-  };
+          if (response.status === 200) {
+            toast.success(`Template de e-mail salvo com sucesso`);
+            handleClose();
+          }
+        } catch (err) {
+          toastError("Nome do template já existente");
+          handleClose();
+        }
+      };
+  
+      await saveTemplate();
+    };
 
   return (
     <div className={classes.root}>
       <Dialog
-        maxWidth="lg"
+        maxWidth="sm"
         fullWidth={true}
         open={open}
         onClose={handleClose}
         scroll="paper"
       >
         <DialogTitle id="form-dialog-title">
-          Validação de DNS
+          Criar novo template
         </DialogTitle>
         <Formik
+          initialValues={templateForm}
           enableReinitialize={true}
-          initialValues={""}
           onSubmit={(values, actions) => {
-            setTimeout(() => {}, 400);
+            setTimeout(() => {
+              handleSaveEmail(values);
+            }, 400);
           }}
         >
-          {({ isSubmitting }) => (
+          {({ values, errors, touched, isSubmitting }) => (
             <Form>
               <DialogContent dividers>
-                <Typography>
-                  Para se proteger contra SPAM, adicione o seguinte registro SPF ao DNS do seu domínio {"(Opcional)"}:
-                </Typography>
-                <Typography>
-                  Nome: <strong>@</strong><br />
-                  Tipo: <strong>TXT</strong><br />
-                  Valor: <strong>v=spf1 include:{user.domain} -all</strong>
-                </Typography>
-              </DialogContent>
-              <DialogContent>
-                <Typography>
-                  Para verificar seu domínio, adicione o seguinte registro TXT ao DNS do seu domínio {"(Obrigatório)"}:
-                </Typography>
-                <Typography style={{ wordWrap: "break-word" }}>
-                  Nome: <strong>@</strong><br />
-                  Tipo: <strong>TXT</strong><br />
-                  Valor: <strong>{dns.dkim ? dns.dkim : dns}</strong>
-                </Typography>
+                <Field
+                  as={TextField}
+                  label="Digite o nome do template"
+                  name="templateName"
+                  helperText={touched.text && errors.text}
+                  variant="outlined"
+                  margin="dense"
+                  style={{ width: '100%' }}
+                />
               </DialogContent>
               <DialogActions>
                 <Button
                   onClick={handleClose}
                   color="secondary"
+                  disabled={isSubmitting}
                   variant="outlined"
                 >
                   CANCELAR
@@ -114,11 +122,11 @@ const EmailModalCampaignValidation = ({ open, onClose, user, dns }) => {
                 <Button
                   type="submit"
                   color="primary"
-                  onClick={handleVerifyDNS}
+                  disabled={isSubmitting}
                   variant="contained"
                   className={classes.btnWrapper}
                 >
-                  Verificar DNS
+                  ADICIONAR
                 </Button>
               </DialogActions>
             </Form>
@@ -129,4 +137,4 @@ const EmailModalCampaignValidation = ({ open, onClose, user, dns }) => {
   );
 };
 
-export default EmailModalCampaignValidation;
+export default CreateTemplateModal;

@@ -47,54 +47,93 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-const EditModalCampaign = ({ open, onClose, company, emailInfo }) => {
-
-  const [emailForm, setEmailForm] = useState({
-    name: "",
-    title: "",
-    description: "",
-    sender: "",
-    recipient: "",
-    template: "",
-    companyId: company,
-  });
-  const [contactList, setContactList] = useState([]);
-  const [user, setUser] = useState(null);
-  const [emailData, setEmailInfo] = useState(emailInfo);
-  const [userId, setUserId] = useState(localStorage.getItem("userId"));
-
-  const classes = useStyles();
-
-  const handleClose = () => {
-    onClose();
+const EditModalCampaign = ({ open, onClose, company, emailInfo, setEmails }) => {
+  const initialFormState = {
+    name: (emailInfo && emailInfo.name) || '',
+    title: (emailInfo && emailInfo.title) || null,
+    description: (emailInfo && emailInfo.description) || null,
+    from: (emailInfo && emailInfo.from) || null,
+    contactListId: (emailInfo && emailInfo.contactListId) || null,
+    templateId: (emailInfo && emailInfo.templateId) || null,
+    companyId: company || null,
   };
-
-  useEffect(() => {
-    const fetchContactList = async () => {
+  
+    const [contactList, setContactList] = useState([]);
+    const [user, setUser] = useState(null);
+    const [templateList, setTemplateList] = useState([]);
+    const [userId, setUserId] = useState(localStorage.getItem("userId"));
+    const [pageNumber, setPageNumber] = useState(1);
+    const [searchParam, setSearchParam] = useState("");
+  
+    const classes = useStyles();
+  
+    const handleClose = () => {
+      onClose();
+    };
+  
+    const handleEdit = async (values) => {
       try {
-        const { data } = await api.get(`/contact-lists`);
-        setContactList(data.records);
+        console.log(emailInfo)
+        console.log(values)
+        
+        const response = await api.put(`/email/${emailInfo.id}`, values);
+        if (response.status === 200) {
+          toast.success(`Campanha de e-mail editada com sucesso`);
+          handleClose();
+          const fetchData = async () => {
+            const { data } = await api.get("/emails", {
+              params: { searchParam, pageNumber },
+            });
+            setEmails(data.email);
+          };
+          fetchData();
+          onClose();
+        }
+
       } catch (err) {
         toastError(err);
       }
     };
+  
+    useEffect(() => {
+      const fetchContactList = async () => {
+        try {
+          const { data } = await api.get(`/contact-lists`);
+          setContactList(data.records);
+        } catch (err) {
+          toastError(err);
+        }
+      };
+  
+      fetchContactList();
+    }, []);
 
-    fetchContactList();
-  }, []);
 
-  useEffect(() => {
-    const fetchEmailUser = async () => {
-      try {
-        const { data } = await api.get(`/users/${userId}`);
-        setUser(data);
-      } catch (err) {
-        toastError(err);
-      }
-    };
-
-    fetchEmailUser();
-  }, []);
-
+    useEffect(() => {
+      const fetchTemplateList = async () => {
+        try { 
+          const { data } = await api.get(`/templates`);
+          setTemplateList(data.templates); 
+        } catch (err) {
+          toastError(err);
+        }
+      };
+  
+      fetchTemplateList();
+    }, []);
+  
+    useEffect(() => {
+      const fetchEmailUser = async () => {
+        try {
+          const { data } = await api.get(`/users/${userId}`);
+          setUser(data);
+        } catch (err) {
+          toastError(err);
+        }
+      };
+  
+      fetchEmailUser();
+    }, []);
 
 
   return (
@@ -111,10 +150,11 @@ const EditModalCampaign = ({ open, onClose, company, emailInfo }) => {
           Editar Campanha
         </DialogTitle>
         <Formik
-          initialValues={emailForm}
+          initialValues={initialFormState}
           enableReinitialize={true}
           onSubmit={(values, actions) => {
             setTimeout(() => {
+                handleEdit(values);
             }, 400);
           }}
         >
@@ -127,7 +167,6 @@ const EditModalCampaign = ({ open, onClose, company, emailInfo }) => {
                   name="name"
                   helperText={touched.text && errors.text}
                   variant="outlined"
-                  value={emailInfo.name || ""}
                   margin="dense"
                   style={{ width: '100%', marginBottom: 10 }}
                 />
@@ -154,31 +193,30 @@ const EditModalCampaign = ({ open, onClose, company, emailInfo }) => {
 <Field
   as={Select}
   label="Selecione o remetente"
-  name="sender"
+  name="from"
   variant="outlined"
   margin="dense"
   style={{ width: '100%', marginBottom: 10 }}
   displayEmpty
 >
-  <MenuItem value="" disabled>
-  Selecione o remetente
+  <MenuItem value={null} disabled>
+    Selecione o remetente
   </MenuItem>
-    <MenuItem key={user.id} value={user.id}>
-      {user.email}
-    </MenuItem>
+  <MenuItem key={user.id} value={user.id}>
+    {user.email}
+  </MenuItem>
 </Field>
-
 
 <Field
   as={Select}
   label="Selecione a lista de destinatários"
-  name="recipient"
+  name="contactListId"
   variant="outlined"
   margin="dense"
   style={{ width: '100%', marginBottom: 10 }}
   displayEmpty
 >
-  <MenuItem value="" disabled>
+  <MenuItem value={null} disabled>
     Selecione a lista de destinatários
   </MenuItem>
   {contactList.map((list) => (
@@ -187,19 +225,25 @@ const EditModalCampaign = ({ open, onClose, company, emailInfo }) => {
     </MenuItem>
   ))}
 </Field>
+
 <Field
   as={Select}
   label="Selecione o template"
-  name="template"
+  name="templateId"
   variant="outlined"
   margin="dense"
   style={{ width: '100%', marginBottom: 10 }}
   displayEmpty
 >
-  <MenuItem value="" disabled>
+<MenuItem value={null} disabled>
     Selecione o template
   </MenuItem>
-
+{templateList.map((template) => (
+  <MenuItem key={template.id} value={template.id}>
+    {template.name}
+  </MenuItem>
+))}
+  {/* Adicione seus templates aqui */}
 </Field>
 
               </DialogContent>
@@ -207,7 +251,6 @@ const EditModalCampaign = ({ open, onClose, company, emailInfo }) => {
                 <Button
                   onClick={handleClose}
                   color="secondary"
-                  disabled={isSubmitting}
                   variant="outlined"
                 >
                   CANCELAR
@@ -215,7 +258,6 @@ const EditModalCampaign = ({ open, onClose, company, emailInfo }) => {
                 <Button
                   type="submit"
                   color="primary"
-                  disabled={isSubmitting}
                   variant="contained"
                   className={classes.btnWrapper}
                 >

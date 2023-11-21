@@ -37,7 +37,7 @@ const App = () => {
                 },
                 "&::-webkit-scrollbar-thumb": {
                     boxShadow: 'inset 0 0 6px rgba(0, 0, 0, 0.3)',
-                    backgroundColor: "#e8e8e8",
+                    backgroundColor: "red",
                 },
             },
             scrollbarStylesSoft: {
@@ -57,11 +57,11 @@ const App = () => {
                 light: { main: mode === "light" ? "#F3F3F3" : "#333333" },
                 tabHeaderBackground: mode === "light" ? "#EEE" : "#666",
                 optionsBackground: mode === "light" ? "#fafafa" : "#333",
-                fancyBackground: mode === "light" ? "#fafafa" : "#333",
+                fancyBackground: mode === "light" ? 'rgb(219, 187, 64)' : "#333",
                 total: mode === "light" ? "#fff" : "#222",
                 messageIcons: mode === "light" ? "grey" : "#F3F3F3",
                 inputBackground: mode === "light" ? "#FFFFFF" : "#333",
-                barraSuperior: "#007aff"
+                barraSuperior: 'rgb(175, 120, 38)'
             },
             mode,
         },

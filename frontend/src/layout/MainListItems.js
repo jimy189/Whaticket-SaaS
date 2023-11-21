@@ -59,7 +59,7 @@ import WrapTextOutlinedIcon from '@material-ui/icons/WrapTextOutlined';
 import ErrorOutlineOutlinedIcon from '@material-ui/icons/ErrorOutlineOutlined';
 import OfflineBoltOutlinedIcon from '@material-ui/icons/OfflineBoltOutlined';
 import VolumeUpOutlinedIcon from '@material-ui/icons/VolumeUpOutlined';
-
+import ArticleIcon from '@material-ui/icons/Web';
 
 import { i18n } from "../translate/i18n";
 import { WhatsAppsContext } from "../context/WhatsApp/WhatsAppsContext";
@@ -69,6 +69,15 @@ import { socketConnection } from "../services/socket";
 import { isArray } from "lodash";
 import api from "../services/api";
 import toastError from "../errors/toastError";
+import { makeStyles } from "@material-ui/core/styles";
+
+const useStyles = makeStyles(theme => ({
+  menuItems: {
+    "&:hover": {
+      background: theme.palette.fancyBackground,
+    },
+  },
+}));
 
 function ListItemLink(props) {
   const { icon, primary, to, className } = props;
@@ -161,6 +170,7 @@ const MainListItems = (props) => {
   const [searchParam] = useState("");
   const [chats, dispatch] = useReducer(reducer, []);
   const [openKanbanSubmenu, setOpenKanbanSubmenu] = useState(false);
+  const classes = useStyles();
   
   useEffect(() => {
     dispatch({ type: "RESET" });
@@ -265,12 +275,14 @@ const MainListItems = (props) => {
 
       <ListItemLink
         to="/tickets"
+        className={classes.menuItems}
         primary={i18n.t("mainDrawer.listItems.tickets")}
         icon={<WhatsAppIcon />}
       />
 
      <ListItemLink
         to="/todolist"
+        className={classes.menuItems}
         primary={i18n.t("mainDrawer.listItems.todolist")}
         icon={<EventIcon />}
       />
@@ -318,6 +330,7 @@ const MainListItems = (props) => {
 
       <ListItemLink
         to="/quick-messages"
+        style={{}}
         primary={i18n.t("mainDrawer.listItems.quickMessages")}
         icon={<OfflineBoltOutlinedIcon />}
       />
@@ -350,13 +363,7 @@ const MainListItems = (props) => {
         }
       />
 
-    <ListItemLink
-        to="/email"
-        primary={i18n.t("mainDrawer.listItems.email")}
-        icon={<EmailIcon/>}
-      />
-
-      <ListItemLink
+  <ListItemLink
         to="/helps"
         primary={i18n.t("mainDrawer.listItems.helps")}
         icon={<HelpOutlineOutlinedIcon />}
@@ -411,10 +418,23 @@ const MainListItems = (props) => {
                       </ListItemIcon>
                       <ListItemText primary="Listas de Contatos" />
                     </ListItem>
+
+                    <ListItemLink
+        to="/email"
+        primary={i18n.t("mainDrawer.listItems.email")}
+        icon={<EmailIcon/>}
+      />
+
+    <ListItemLink
+        to="/template"
+        primary={i18n.t("mainDrawer.listItems.template")}
+        icon={<ArticleIcon/>}
+      />
                     <ListItem
                       onClick={() => history.push("/campaigns-config")}
                       button
                     >
+
                       <ListItemIcon>
                         <SettingsOutlinedIcon />
                       </ListItemIcon>

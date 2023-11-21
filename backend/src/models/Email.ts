@@ -1,44 +1,73 @@
 import {
-    Table,
-    Column,
-    CreatedAt,
-    UpdatedAt,
-    Model,
-    PrimaryKey,
-    AutoIncrement,
-    HasMany,
-    ForeignKey
-  } from "sequelize-typescript";
-import ContactListItem from "./ContactListItem";
+  Table,
+  Column,
+  CreatedAt,
+  UpdatedAt,
+  Model,
+  PrimaryKey,
+  AutoIncrement,
+  ForeignKey,
+  BelongsTo,
+} from "sequelize-typescript";
 import Company from "./Company";
-  
-  @Table({ tableName: "CampaignEmail" })
-  class Email extends Model<Email> {
-    @PrimaryKey
-    @AutoIncrement
-    @Column
-    id: number;
-  
-    @Column
-    name: string;
+import ContactList from "./ContactList";
+import TemplateEmail from "./TemplateEmail";
+import SignEmail from "./SignEmail"; // Adicionado o import do SignEmail
+import User from "./User";
 
-    @Column
-    from: string;
+@Table({ tableName: "CampaignEmail" })
+class Email extends Model<Email> {
+  @PrimaryKey
+  @AutoIncrement
+  @Column
+  id: number;
 
-    @ForeignKey(() => Company)
-    @Column
-    companyId: number;
-  
-    @CreatedAt
-    createdAt: Date;
-  
-    @UpdatedAt
-    updatedAt: Date;
+  @Column
+  name: string;
 
-    @ForeignKey(() => ContactListItem)
-    @Column
-    userQueuesId: number;
-  }
-  
-  export default Email;
-  
+  @Column
+  title: string;
+
+  @Column
+  description: string;
+
+  @ForeignKey(() => Company)
+  @Column
+  companyId: number;
+
+  @ForeignKey(() => ContactList)
+  @Column
+  contactListId: number;
+
+  @BelongsTo(() => ContactList)
+  contactList: ContactList;
+
+  @ForeignKey(() => TemplateEmail)
+  @Column
+  templateId: number;
+
+  @BelongsTo(() => TemplateEmail)
+  template: TemplateEmail;
+
+  @ForeignKey(() => SignEmail)
+  @Column
+  dkimId: number;
+
+  @BelongsTo(() => SignEmail)
+  dkim: SignEmail;
+
+  @ForeignKey(() => User)
+  @Column
+  from: number;
+
+  @BelongsTo(() => User)
+  user: User;
+
+  @CreatedAt
+  createdAt: Date;
+
+  @UpdatedAt
+  updatedAt: Date;
+}
+
+export default Email;

@@ -36,6 +36,7 @@ import Kanban from "../pages/Kanban";
 import TagsKanban from "../pages/TagsKanban/";
 import Email from "../pages/Email";
 import Template from "../components/EmailTemplate/index"
+import TemplateEmail from "../pages/TemplateEmail/index"
 
 
 const Routes = () => {
@@ -91,7 +92,8 @@ const Routes = () => {
                 />
                 <Route exact path="/tags" component={Tags} isPrivate />
                 <Route exact path="/email" component={Email} isPrivate />
-                <Route exact path="/template" component={Template} isPrivate />
+                <Route exact path="/template" component={TemplateEmail} isPrivate />
+                <Route exact path="/template/create" component={Template} isPrivate />
                 <Route exact path="/contacts" component={Contacts} isPrivate />
                 <Route exact path="/helps" component={Helps} isPrivate />
                 <Route exact path="/users" component={Users} isPrivate />
