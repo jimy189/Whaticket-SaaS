@@ -6,11 +6,15 @@ import TemplateEmail from "../../models/TemplateEmail";
 import ContactList from "../../models/ContactList";
 import ContactListItem from "../../models/ContactListItem";
 import User from "../../models/User";
+import crypto from 'crypto';
 
 interface EmailVerificationResult {
   success: boolean;
   message?: string;
 }
+
+
+
 
 const SendEmail = async (id, companyId): Promise<EmailVerificationResult> => {
   const record = await Email.findByPk(id, {
@@ -61,11 +65,17 @@ const SendEmail = async (id, companyId): Promise<EmailVerificationResult> => {
   console.log(dkimOptions);
 
   let transporter = nodemailer.createTransport({
-    host: "smtp",
-    port: 25,
+    host: `smtp.${senderDomain}`,
+    port: 587,
     secure: false,
+    auth: {
+      user: '',
+      pass: '',
+    },
+
+    timeout: 10000,
     tls: {
-        rejectUnauthorized: false, 
+        rejectUnauthorized: false,
     },
     dkim: {
         domainName: dkimOptions.domainName,
@@ -73,7 +83,7 @@ const SendEmail = async (id, companyId): Promise<EmailVerificationResult> => {
         privateKey: dkimOptions.privateKey
     },
   });
-  
+
   const contactsEmails = record.contactList.contacts.map(contact => contact.email);
 
   if (contactsEmails.length === 0) {
@@ -81,7 +91,7 @@ const SendEmail = async (id, companyId): Promise<EmailVerificationResult> => {
   }
 
   const emailOptions = {
-    from: record.user.email,
+    from: '',
     to: contactsEmails.join(', '),
     subject: record.title,
     html: record.template.html,
